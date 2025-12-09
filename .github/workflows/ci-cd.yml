@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD to Fly.io
 
 on:
   push:
@@ -7,68 +7,58 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-test-docker:
+  build-test-docker-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Checkout code
-    - name: Checkout
-      uses: actions/checkout@v4
+      # 1. Checkout repo
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # 2. Setup .NET
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
+      # 2. Setup .NET 8
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
 
-    # 3. Restore dependencies
-    - name: Restore
-      run: dotnet restore
+      # 3. Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore
 
-    # 4. Build solution
-    - name: Build
-      run: dotnet build --no-restore --configuration Release
+      # 4. Build solution
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
 
-    # 5. Run tests
-    - name: Test
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      # 5. Run tests
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
 
-    # 6. Setup Docker Buildx
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      # 6. Setup Docker Buildx
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    # 7. Log in to GHCR
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      # 7. Login to GitHub Container Registry
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    # 8. Docker build cache
-    - name: Cache Docker layers
-      uses: actions/cache@v4
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
+      # 8. Build Docker image
+      - name: Build Docker image
+        run: docker build -t ghcr.io/${{ github.repository }}/order-ingestion-api:latest ./OrderIngestion.Api
 
-    # 9. Build & push Docker image
-    - name: Build and Push Docker Image
-      uses: docker/build-push-action@v5
-      with:
-        context: .                           # root of repo
-        file: ./OrderIngestion.Api/Dockerfile
-        push: true
-        tags: |
-          ghcr.io/${{ github.repository }}/order-ingestion-api:latest
-          ghcr.io/${{ github.repository }}/order-ingestion-api:${{ github.sha }}
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      # 9. Push Docker image to GHCR
+      - name: Push Docker image
+        run: docker push ghcr.io/${{ github.repository }}/order-ingestion-api:latest
 
-    # 10. Save cache
-    - name: Move Docker cache
-      run: |
-        rm -rf /tmp/.buildx-cache
-        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      # 10. Install Fly CLI
+      - name: Install Fly CLI
+        run: curl -L https://fly.io/install.sh | sh
+
+      # 11. Deploy to Fly.io
+      - name: Deploy to Fly.io
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --config fly.toml --image ghcr.io/${{ github.repository }}/order-ingestion-api:latest --remote-only
