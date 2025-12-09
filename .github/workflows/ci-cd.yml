@@ -47,11 +47,12 @@ jobs:
 
       # 8. Build Docker image
       - name: Build Docker image
-        run: docker build -t ghcr.io/${{ github.repository }}/order-ingestion-api:latest ./OrderIngestion.Api
+        run: docker build -t ghcr.io/asifabdullah-netdev/orderingestion/order-ingestion-api:latest ./OrderIngestion.Api
+
 
       # 9. Push Docker image to GHCR
       - name: Push Docker image
-        run: docker push ghcr.io/${{ github.repository }}/order-ingestion-api:latest
+        run: docker push ghcr.io/asifabdullah-netdev/orderingestion/order-ingestion-api:latest
 
       # 10. Install Fly CLI
       - name: Install Fly CLI
@@ -61,4 +62,4 @@ jobs:
       - name: Deploy to Fly.io
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: flyctl deploy --config fly.toml --image ghcr.io/${{ github.repository }}/order-ingestion-api:latest --remote-only
+        run: flyctl deploy --config fly.toml --image ghcr.io/asifabdullah-netdev/orderingestion/order-ingestion-api:latest --remote-only
