@@ -47,7 +47,7 @@ jobs:
 
       # 8. Build Docker image
       - name: Build Docker image
-        run: docker build -t ghcr.io/asifabdullah-netdev/orderingestion/order-ingestion-api:latest -f ./OrderIngestion.Api/Dockerfile ./OrderIngestion.Api
+        run: docker build -t ghcr.io/asifabdullah-netdev/orderingestion/order-ingestion-api:latest -f ./OrderIngestion.Api/Dockerfile .
         
       # 9. Push Docker image to GHCR
       - name: Push Docker image
