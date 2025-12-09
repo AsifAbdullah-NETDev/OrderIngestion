@@ -1,0 +1,5 @@
+﻿CREATE TYPE OrderItemType AS TABLE (
+    SKU NVARCHAR(50),
+    Quantity INT,
+    Price DECIMAL(18,2)
+);

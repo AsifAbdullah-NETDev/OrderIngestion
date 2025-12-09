@@ -1,0 +1,65 @@
+# Ignore build output folders (all projects)
+**/bin/
+**/obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache and settings folders
+.vs/
+.vscode/
+.idea/
+
+# Rider
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# NuGet packages folder
+**/packages/
+
+# Resharper
+_ReSharper*/
+*.ReSharper*/
+
+# DotCover
+*.dotCover
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Environment files
+.env
+*.env
+
+# npm packages and logs (if you have NodeJS)
+node_modules/
+npm-debug.log
+
+# Azure Dev Spaces config
+azds.yaml
+
+# Docker related files
+docker-compose*
+Dockerfile*
+
+# Ignore secrets or config files you don't want in repo
+secrets*.yaml
+values*.yaml
+
+# Rider cache
+.idea/
+
+# User-specific VS Code workspace settings
+*.code-workspace
+
+# Others
+*.dbmdl
+*.jfm

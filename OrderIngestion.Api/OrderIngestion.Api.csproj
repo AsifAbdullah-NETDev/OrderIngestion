@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>db3df30f-98b9-4888-a092-27570565d3e4</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Dockerfile\**" />
+    <Content Remove="Dockerfile\**" />
+    <EmbeddedResource Remove="Dockerfile\**" />
+    <None Remove="Dockerfile\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OrderIngestion.Application\OrderIngestion.Application.csproj" />
+    <ProjectReference Include="..\OrderIngestion.Infrastructure\OrderIngestion.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
