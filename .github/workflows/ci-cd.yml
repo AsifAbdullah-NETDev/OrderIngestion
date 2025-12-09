@@ -55,7 +55,7 @@ jobs:
 
       # 10. Install Fly CLI
       - name: Install Fly CLI
-        run: 
+        run: |
             curl -L https://fly.io/install.sh | sh
             echo "$HOME/.fly/bin" >> $GITHUB_PATH
 
