@@ -21,10 +21,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.MapGet("/", () => "Order Ingestion API is running!");
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 
 app.MapControllers();
 
