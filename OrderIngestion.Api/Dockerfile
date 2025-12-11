@@ -22,10 +22,11 @@ WORKDIR /app
 # Copy published app
 COPY --from=build /app/publish .
 
-# Set environment variable to use the PORT assigned by Render
-ENV ASPNETCORE_URLS=http://*:$PORT
+# Ensure ASP.NET Core listens on Render-assigned port at runtime
+# If PORT is not defined (e.g., local dev), fallback to 8080
+ENV ASPNETCORE_URLS=http://*:${PORT:-8080}
 
-# Expose the port (optional)
+# Optional: expose port for documentation / local dev
 EXPOSE 8080
 
 # Run the app
