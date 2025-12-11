@@ -23,47 +23,47 @@ namespace OrderIngestion.Infrastructure.Data
         }
         public IDbConnection CreateConnection()
         {
-            var policy = Policy
-                .Handle<SqlException>()
-                .WaitAndRetry(
-                    retryCount: _retryCount,
-                    sleepDurationProvider: attempt => TimeSpan.FromSeconds(_retryDelaySeconds),
-                    onRetry: (exception, timeSpan, retryCount, context) =>
-                    {
-                        Console.WriteLine($"SQL Server not ready. Retry {retryCount}/{_retryCount} in {timeSpan.TotalSeconds}s...");
-                    });
+            //var policy = Policy
+            //    .Handle<SqlException>()
+            //    .WaitAndRetry(
+            //        retryCount: _retryCount,
+            //        sleepDurationProvider: attempt => TimeSpan.FromSeconds(_retryDelaySeconds),
+            //        onRetry: (exception, timeSpan, retryCount, context) =>
+            //        {
+            //            Console.WriteLine($"SQL Server not ready. Retry {retryCount}/{_retryCount} in {timeSpan.TotalSeconds}s...");
+            //        });
 
-            IDbConnection connection = null;
+            //IDbConnection connection = null;
 
-            policy.Execute(() =>
-            {
-                connection = new SqlConnection(_connectionString);
-                connection.Open();
-            });
-
-            return connection;
-
-
-            //int attempt = 0;
-
-            //while (true)
+            //policy.Execute(() =>
             //{
-            //    try
-            //    {
-            //        var connection = new SqlConnection(_connectionString);
-            //        connection.Open(); // Try to open connection
-            //        return connection;
-            //    }
-            //    catch (SqlException)
-            //    {
-            //        attempt++;
-            //        if (attempt >= _maxRetries)
-            //            throw; // Give up after max retries
+            //    connection = new SqlConnection(_connectionString);
+            //    connection.Open();
+            //});
 
-            //        Console.WriteLine($"SQL Server not ready. Retry {attempt}/{_maxRetries} in {_delaySeconds} seconds...");
-            //        Thread.Sleep(_delaySeconds * 1000);
-            //    }
-            //}
+            //return connection;
+
+
+            int attempt = 0;
+
+            while (true)
+            {
+                try
+                {
+                    var connection = new SqlConnection(_connectionString);
+                    connection.Open();
+                    return connection;
+                }
+                catch (SqlException)
+                {
+                    attempt++;
+                    if (attempt >= _retryCount)
+                        throw;
+
+                    Console.WriteLine($"SQL Server not ready. Retry {attempt}/{_retryCount} in {_retryDelaySeconds} seconds...");
+                    Thread.Sleep(_retryDelaySeconds * 1000);
+                }
+            }
         }
     }
 }

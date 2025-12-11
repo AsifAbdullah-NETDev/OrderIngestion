@@ -35,7 +35,8 @@ namespace OrderIngestion.Infrastructure.Data
                     table.Rows.Add(i.Sku, i.Quantity, i.Price);
 
                 var p = new DynamicParameters();
-                p.Add("@RequestId", Guid.Parse(request.RequestId));
+                //p.Add("@RequestId", Guid.Parse(request.RequestId));
+                p.Add("@RequestId", request.RequestId);
                 p.Add("@OrderNumber", request.OrderNumber);
                 p.Add("@CustomerName", request.Customer.Name);
                 p.Add("@CustomerEmail", request.Customer.Email);
@@ -52,7 +53,7 @@ namespace OrderIngestion.Infrastructure.Data
 
                 return (InsertResult.Success, result);
             }
-            catch
+            catch(Exception ex)
             {
                 return (InsertResult.Error, 0);
             }
