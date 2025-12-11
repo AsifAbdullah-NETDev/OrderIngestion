@@ -1,4 +1,4 @@
-name: CI/CD to Fly.io
+name: CI/CD to Render
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-test-docker-deploy:
+  build-test-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,30 +33,9 @@ jobs:
       - name: Test
         run: dotnet test --no-build --configuration Release --verbosity normal
 
-      # 6. Setup Docker Buildx
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # 7. Login to GitHub Container Registry
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
-
-      # 8. Build Docker image
-      - name: Build Docker image
-        run: docker build -t ghcr.io/asifabdullah-netdev/orderingestion/order-ingestion-api:latest -f ./OrderIngestion.Api/Dockerfile .
-        
-      # 9. Push Docker image to GHCR
-      - name: Push Docker image
-        run: docker push ghcr.io/asifabdullah-netdev/orderingestion/order-ingestion-api:latest
-
-      # 10 + 11. Deploy with official action
-      - name: Deploy to Fly.io
-        uses: superfly/flyctl-actions@1.5
-        with:
-            args: "deploy --config fly.toml --image ghcr.io/asifabdullah-netdev/orderingestion/order-ingestion-api:latest --remote-only"
+      # 6. Trigger Render Deploy Hook
+      - name: Deploy to Render
+        run: |
+          curl "$RENDER_DEPLOY_HOOK"
         env:
-            FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
