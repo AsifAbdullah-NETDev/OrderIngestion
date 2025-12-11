@@ -1,38 +1,32 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS base
-WORKDIR /app
-RUN useradd -m appuser
-USER appuser
-EXPOSE 8080
-EXPOSE 8081
-
-
-# This stage is used to build the service project
+# Stage 1: Build the app
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /app
+WORKDIR /src
 
+# Copy csproj files and restore
 COPY ["OrderIngestion.Api/OrderIngestion.Api.csproj", "OrderIngestion.Api/"]
 COPY ["OrderIngestion.Application/OrderIngestion.Application.csproj", "OrderIngestion.Application/"]
 COPY ["OrderIngestion.Infrastructure/OrderIngestion.Infrastructure.csproj", "OrderIngestion.Infrastructure/"]
 
-RUN dotnet restore "./OrderIngestion.Api/OrderIngestion.Api.csproj"
+RUN dotnet restore "OrderIngestion.Api/OrderIngestion.Api.csproj"
 
+# Copy the rest of the code
 COPY . .
 
-WORKDIR "/app/OrderIngestion.Api"
-RUN dotnet build "./OrderIngestion.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/OrderIngestion.Api"
+RUN dotnet publish "OrderIngestion.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# This stage is used to publish the service project to be copied to the final stage
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./OrderIngestion.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+# Stage 2: Final image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-USER appuser
-COPY --from=publish /app/publish .
+
+# Copy published app
+COPY --from=build /app/publish .
+
+# Set environment variable to use the PORT assigned by Render
+ENV ASPNETCORE_URLS=http://*:$PORT
+
+# Expose the port (optional)
+EXPOSE 8080
+
+# Run the app
 ENTRYPOINT ["dotnet", "OrderIngestion.Api.dll"]
