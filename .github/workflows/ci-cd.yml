@@ -10,6 +10,9 @@ jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      DOCKER_IMAGE: ghcr.io/asifabdullah-netdev/order-ingestion-api:latest
+
     steps:
       # 1. Checkout repo
       - name: Checkout code
@@ -21,27 +24,27 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      # 3. Restore & Build
+      # 3. Restore dependencies
       - name: Restore dependencies
         run: dotnet restore
 
+      # 4. Build solution
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      # 4. Run Tests
+      # 5. Run Tests
       - name: Run Tests
         run: dotnet test --no-build --configuration Release --verbosity normal
 
-      # 5. Lint / Format Check (optional)
+      # 6. Lint / Format Check (optional)
       - name: Lint / Format
         run: dotnet format --verify-no-changes || true
 
-      # 6. Build Docker Image
+      # 7. Build Docker Image
       - name: Build Docker image
-        run: |
-          docker build -t ghcr.io/<org>/order-ingestion-api:latest -f ./OrderIngestion.Api/Dockerfile .
+        run: docker build -t $DOCKER_IMAGE -f ./OrderIngestion.Api/Dockerfile .
 
-      # 7. Push Docker Image (optional)
+      # 8. Login to GHCR
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -49,10 +52,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_PAT }}
 
+      # 9. Push Docker Image
       - name: Push Docker image
-        run: docker push ghcr.io/<org>/order-ingestion-api:latest
+        run: docker push $DOCKER_IMAGE
 
-      # 8. Trigger Render Deploy Hook
+      # 10. Trigger Render Deploy Hook
       - name: Deploy to Render
         run: curl -X POST "$RENDER_DEPLOY_HOOK"
         env:
