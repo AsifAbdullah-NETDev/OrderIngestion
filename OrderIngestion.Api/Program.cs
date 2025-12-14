@@ -1,5 +1,9 @@
-using OrderIngestion.Infrastructure.Extensions;
+using Microsoft.OpenApi.Models;
+using OrderIngestion.Api.Swagger;
+using OrderIngestion.Application.Models;
 using OrderIngestion.Application.Services;
+using OrderIngestion.Infrastructure.Extensions;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +12,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Order Ingestion API",
+        Version = "v1",
+        Description = "API for managing orders"
+    });
+    c.SchemaFilter<DTOsSchemaFilter>();
+});
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<OrderService>();

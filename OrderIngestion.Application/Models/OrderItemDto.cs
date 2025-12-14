@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace OrderIngestion.Application.Models
 {
-    public class OrderItemDto
+    public class OrderItemDTO
     {
+        public int OrderId { get; set; }
         public string Sku { get; set; }
         public int Quantity { get; set; }
         public decimal Price { get; set; }

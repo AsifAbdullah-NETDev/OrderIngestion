@@ -10,7 +10,7 @@ namespace OrderIngestion.Application.Models
     {
         public string RequestId { get; set; }
         public string OrderNumber { get; set; }
-        public CustomerDto Customer { get; set; }
-        public List<OrderItemDto> Items { get; set; }
+        public CustomerDTO Customer { get; set; }
+        public List<OrderItemDTO> Items { get; set; }
     }
 }

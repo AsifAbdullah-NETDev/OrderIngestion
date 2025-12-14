@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace OrderIngestion.Application.Models
 {
-    public class CustomerDto
+    public class CustomerDTO
     {
         public string Name { get; set; }
         public string Email { get; set; }

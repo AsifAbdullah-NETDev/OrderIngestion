@@ -10,6 +10,7 @@ namespace OrderIngestion.Application.Interfaces
 {
     public interface IOrderRepository
     {
-        Task<(InsertResult Status, int OrderId)> InsertOrderAsync(OrderRequest request);
+        Task<(InsertResult Status, int OrderId, string StatusMessage)> InsertOrderAsync(OrderRequest request);
+        Task<PagedResult<OrderDTO>> GetOrdersWithItemsAsync(int page, int pageSize, string? orderNumber, string? customerEmail);
     }
 }

@@ -10,10 +10,10 @@ public static class OrderValidator
     {
         var result = new OrderIngestion.Application.Models.ValidationResult();
 
-        //if (!Guid.TryParse(request.RequestId, out _))
-        //    result.Errors.Add("Invalid RequestId");
-        if (string.IsNullOrWhiteSpace(request.RequestId))
+        if (!Guid.TryParse(request.RequestId, out _))
             result.Errors.Add("Invalid RequestId");
+        //if (string.IsNullOrWhiteSpace(request.RequestId))
+        //    result.Errors.Add("Invalid RequestId");
 
         if (string.IsNullOrWhiteSpace(request.OrderNumber))
             result.Errors.Add("OrderNumber is required");
