@@ -1,8 +1,11 @@
 using Microsoft.OpenApi.Models;
+using Npgsql;
 using OrderIngestion.Api.Swagger;
 using OrderIngestion.Application.Models;
 using OrderIngestion.Application.Services;
+using OrderIngestion.Infrastructure.Data;
 using OrderIngestion.Infrastructure.Extensions;
+using System.Data;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +25,8 @@ builder.Services.AddSwaggerGen(c =>
     });
     c.SchemaFilter<DTOsSchemaFilter>();
 });
+
+//builder.Services.AddSingleton<DapperContext>();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<OrderService>();

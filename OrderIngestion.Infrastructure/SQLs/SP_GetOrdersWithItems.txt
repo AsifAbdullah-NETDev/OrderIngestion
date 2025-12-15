@@ -1,0 +1,49 @@
+﻿CREATE OR ALTER PROCEDURE [dbo].[SP_GetOrdersWithItems]
+(
+    @Page INT,
+    @PageSize INT,
+    @OrderNumber NVARCHAR(50) = NULL,
+    @CustomerEmail NVARCHAR(200) = NULL
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Offset INT = (@Page - 1) * @PageSize;
+
+    -- 1. Paged orders
+    SELECT o.OrderId,
+           o.OrderNumber,
+           o.RequestId,
+           o.CreatedAt,
+           c.Name AS CustomerName,
+           c.Email AS CustomerEmail
+    INTO #PagedOrders
+    FROM Orders o
+    INNER JOIN Customers c ON o.CustomerId = c.CustomerId
+    WHERE (@OrderNumber IS NULL OR o.OrderNumber LIKE '%' + @OrderNumber + '%')
+      AND (@CustomerEmail IS NULL OR c.Email = @CustomerEmail)
+    ORDER BY o.CreatedAt DESC
+    OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
+
+    -- 2. Items for those orders
+    SELECT oi.OrderId,
+           oi.SKU,
+           oi.Quantity,
+           oi.Price
+    FROM OrderItems oi
+    INNER JOIN #PagedOrders po ON oi.OrderId = po.OrderId;
+
+    -- 3. Orders info
+    SELECT * FROM #PagedOrders;
+
+    -- 4. Total count
+    SELECT COUNT(1)
+    FROM Orders o
+    INNER JOIN Customers c ON o.CustomerId = c.CustomerId
+    WHERE (@OrderNumber IS NULL OR o.OrderNumber LIKE '%' + @OrderNumber + '%')
+      AND (@CustomerEmail IS NULL OR c.Email = @CustomerEmail);
+
+    DROP TABLE #PagedOrders;
+END
+GO

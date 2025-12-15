@@ -7,7 +7,7 @@ using OrderIngestion.Application.Validators;
 namespace OrderIngestion.Api.Controllers
 {
     [ApiController]
-    [Route("api/v1")]
+    [Route("api")]
     public class OrdersController : ControllerBase
     {
         private readonly OrderService _service;

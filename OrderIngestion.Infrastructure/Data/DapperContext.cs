@@ -1,13 +1,14 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Npgsql;
+using Polly;
+using Polly.Retry;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Polly;
-using Polly.Retry;
 
 namespace OrderIngestion.Infrastructure.Data
 {
@@ -50,11 +51,11 @@ namespace OrderIngestion.Infrastructure.Data
             {
                 try
                 {
-                    var connection = new SqlConnection(_connectionString);
+                    var connection = new NpgsqlConnection(_connectionString);
                     connection.Open();
                     return connection;
                 }
-                catch (SqlException)
+                catch (NpgsqlException)
                 {
                     attempt++;
                     if (attempt >= _retryCount)

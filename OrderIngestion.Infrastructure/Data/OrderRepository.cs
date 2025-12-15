@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace OrderIngestion.Infrastructure.Data
@@ -26,44 +27,66 @@ namespace OrderIngestion.Infrastructure.Data
             {
                 using var conn = _context.CreateConnection();
 
-                var table = new DataTable();
-                table.Columns.Add("SKU");
-                table.Columns.Add("Quantity");
-                table.Columns.Add("Price");
+                //var table = new DataTable();
+                //table.Columns.Add("SKU");
+                //table.Columns.Add("Quantity");
+                //table.Columns.Add("Price");
 
-                foreach (var i in request.Items)
-                    table.Rows.Add(i.Sku, i.Quantity, i.Price);
+                //foreach (var i in request.Items)
+                //    table.Rows.Add(i.Sku, i.Quantity, i.Price);
 
-                var p = new DynamicParameters();
-                p.Add("@RequestId", Guid.Parse(request.RequestId));
-                //p.Add("@RequestId", request.RequestId);
-                p.Add("@OrderNumber", request.OrderNumber);
-                p.Add("@CustomerName", request.Customer.Name);
-                p.Add("@CustomerEmail", request.Customer.Email);
-                p.Add("@Items", table.AsTableValuedParameter("OrderItemType"));
+                //var p = new DynamicParameters();
+                //p.Add("@RequestId", Guid.Parse(request.RequestId));
+                //p.Add("@OrderNumber", request.OrderNumber);
+                //p.Add("@CustomerName", request.Customer.Name);
+                //p.Add("@CustomerEmail", request.Customer.Email);
+                //p.Add("@Items", itemsJson, DbType.String);
 
-                p.Add("@OrderId", dbType: DbType.Int32, direction: ParameterDirection.Output);
-                p.Add("@StatusCode", dbType: DbType.Int32, direction: ParameterDirection.Output);
-                p.Add("@StatusMessage", dbType: DbType.String, size: 200, direction: ParameterDirection.Output);
+                //p.Add("@OrderId", dbType: DbType.Int32, direction: ParameterDirection.Output);
+                //p.Add("@StatusCode", dbType: DbType.Int32, direction: ParameterDirection.Output);
+                //p.Add("@StatusMessage", dbType: DbType.String, size: 200, direction: ParameterDirection.Output);
 
 
-                var result = await conn.ExecuteAsync(
-                    "SP_InsertOrderWithItems",
-                    p,
-                    commandType: CommandType.StoredProcedure
+                //var result = await conn.QuerySingleAsync<(int orderId, int statusCode, string statusMessage)>(
+                //    "SP_InsertOrderWithItems",
+                //    p,
+                //    commandType: CommandType.StoredProcedure
+                //);
+
+                var itemsJson = System.Text.Json.JsonSerializer.Serialize(request.Items);
+
+                var parameters = new
+                {
+                    RequestId = Guid.Parse(request.RequestId),
+                    OrderNumber = request.OrderNumber,
+                    CustomerName = request.Customer.Name,
+                    CustomerEmail = request.Customer.Email,
+                    Items = itemsJson
+                };
+
+                // Call PostgreSQL function
+                var result = await conn.QuerySingleAsync<(int orderId, int statusCode, string statusMessage)>(
+                    @"SELECT * FROM SP_InsertOrderWithItems(
+                        @RequestId,
+                        @OrderNumber,
+                        @CustomerName,
+                        @CustomerEmail,
+                        @Items::jsonb
+                    )",
+                    parameters
                 );
 
-                var statusCode = p.Get<int>("@StatusCode");
-                var orderId = p.Get<int?>("@OrderId") ?? 0;
-                var statusMessage = p.Get<string>("@StatusMessage");
+                //var statusCode = p.Get<int>("@StatusCode");
+                //var orderId = p.Get<int?>("@OrderId") ?? 0;
+                //var statusMessage = p.Get<string>("@StatusMessage");
 
-                if (statusCode == -1)
-                    return (InsertResult.Duplicate, 0, statusMessage);
+                if (result.statusCode == -1)
+                    return (InsertResult.Duplicate, 0, result.statusMessage);
 
-                if (statusCode != 0)
-                    return (InsertResult.Error, 0, statusMessage);
+                if (result.statusCode != 0)
+                    return (InsertResult.Error, 0, result.statusMessage);
 
-                return (InsertResult.Success, orderId, statusMessage);
+                return (InsertResult.Success, result.orderId, result.statusMessage);
             }
             catch (Exception ex)
             {
@@ -80,31 +103,50 @@ namespace OrderIngestion.Infrastructure.Data
         {
             using var conn = _context.CreateConnection();
 
-            var parameters = new DynamicParameters();
-            parameters.Add("@Page", page);
-            parameters.Add("@PageSize", pageSize);
-            parameters.Add("@OrderNumber", orderNumber);
-            parameters.Add("@CustomerEmail", customerEmail);
+            //var parameters = new DynamicParameters();
+            //parameters.Add("@Page", page);
+            //parameters.Add("@PageSize", pageSize);
+            //parameters.Add("@OrderNumber", orderNumber);
+            //parameters.Add("@CustomerEmail", customerEmail);
 
-            using var multi = await conn.QueryMultipleAsync(
-                "SP_GetOrdersWithItems",
-                parameters,
-                commandType: CommandType.StoredProcedure
+            //using var multi = await conn.QueryMultipleAsync(
+            //    "SP_GetOrdersWithItems",
+            //    parameters,
+            //    commandType: CommandType.StoredProcedure
+            //);
+
+            var parameters = new
+            {
+                Page = page,
+                PageSize = pageSize,
+                OrderNumber = orderNumber,
+                CustomerEmail = customerEmail
+            };
+
+            // PostgreSQL function returns JSON array of orders including items
+            var jsonResult = await conn.QuerySingleAsync<string>(
+                @"SELECT SP_GetOrdersWithItems(
+                    @Page,
+                    @PageSize,
+                    @OrderNumber,
+                    @CustomerEmail
+                )::text",
+                parameters
             );
 
-            var items = (await multi.ReadAsync<OrderItemDTO>()).ToList();
+            //var items = (await multi.ReadAsync<OrderItemDTO>()).ToList();
+            //var orders = (await multi.ReadAsync<OrderDTO>()).ToList();
+            //var totalCount = await multi.ReadSingleAsync<int>();
 
-            var orders = (await multi.ReadAsync<OrderDTO>()).ToList();
+            //var orderDict = orders.ToDictionary(o => o.OrderId);
+            //foreach (var item in items)
+            //{
+            //    if (orderDict.TryGetValue(item.OrderId, out var order))
+            //        order.Items.Add(item);
+            //}
 
-            var totalCount = await multi.ReadSingleAsync<int>();
-
-            // Map items to orders
-            var orderDict = orders.ToDictionary(o => o.OrderId);
-            foreach (var item in items)
-            {
-                if (orderDict.TryGetValue(item.OrderId, out var order))
-                    order.Items.Add(item);
-            }
+            var orders = JsonSerializer.Deserialize<List<OrderDTO>>(jsonResult) ?? new List<OrderDTO>();
+            int totalCount = orders.Count;
 
             return new PagedResult<OrderDTO>
             {

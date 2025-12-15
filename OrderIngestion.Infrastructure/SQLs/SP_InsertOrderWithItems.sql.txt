@@ -10,28 +10,41 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (SELECT 1 FROM Orders WHERE RequestId = @RequestId)
-        RETURN -1;
+    BEGIN TRY
+        SET @OrderId = NULL;
+        SET @StatusCode = 0;
+        SET @StatusMessage = N'Success';
 
-    DECLARE @CustomerId INT;
+        IF EXISTS (SELECT 1 FROM Orders WHERE RequestId = @RequestId)
+        BEGIN
+            SET @OrderId = (SELECT TOP 1 OrderId FROM Orders WHERE RequestId = @RequestId);
+            SET @StatusCode = -1;
+            SET @StatusMessage = N'Order with this RequestId already exists';
+            RETURN;
+        END
 
-    SELECT @CustomerId = CustomerId FROM Customers WHERE Email = @CustomerEmail;
+        DECLARE @CustomerId INT;
 
-    IF @CustomerId IS NULL
-    BEGIN
-        INSERT INTO Customers (Name, Email)
-        VALUES (@CustomerName, @CustomerEmail);
+        SELECT @CustomerId = CustomerId FROM Customers WHERE Email = @CustomerEmail;
 
-        SET @CustomerId = SCOPE_IDENTITY();
-    END
+        IF @CustomerId IS NULL
+        BEGIN
+            INSERT INTO Customers (Name, Email)
+            VALUES (@CustomerName, @CustomerEmail);
 
-    INSERT INTO Orders (RequestId, OrderNumber, CustomerId)
-    VALUES (@RequestId, @OrderNumber, @CustomerId);
+            SET @CustomerId = SCOPE_IDENTITY();
+        END
 
-    DECLARE @OrderId INT = SCOPE_IDENTITY();
+        INSERT INTO Orders (RequestId, OrderNumber, CustomerId)
+        VALUES (@RequestId, @OrderNumber, @CustomerId);
 
-    INSERT INTO OrderItems (OrderId, SKU, Quantity, Price)
-    SELECT @OrderId, SKU, Quantity, Price FROM @Items;
+        SET @OrderId = SCOPE_IDENTITY();
 
-    RETURN @OrderId;
+        INSERT INTO OrderItems (OrderId, SKU, Quantity, Price)
+        SELECT @OrderId, SKU, Quantity, Price FROM @Items;
+    END TRY
+    BEGIN CATCH
+        SET @StatusCode = ERROR_NUMBER();
+        SET @StatusMessage = ERROR_MESSAGE();
+    END CATCH;
 END
