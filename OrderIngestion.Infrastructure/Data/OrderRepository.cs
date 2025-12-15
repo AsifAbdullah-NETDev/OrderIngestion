@@ -123,18 +123,24 @@ namespace OrderIngestion.Infrastructure.Data
                 CustomerEmail = customerEmail
             };
 
-            // PostgreSQL function returns JSON array of orders including items
-            var orders = (await conn.QueryAsync<OrderDTO>(
-                @"SELECT * FROM ""SP_GetOrdersWithItems""(
+            var jsonResult = await conn.QuerySingleAsync<string>(
+                @"SELECT sp_getorderswithitems(
                     @Page,
                     @PageSize,
                     @OrderNumber,
                     @CustomerEmail
-                )",
+                )::text",
                 parameters
-            )).ToList();
+            );
 
-            int totalCount = orders.Count;
+
+            using JsonDocument doc = JsonDocument.Parse(jsonResult);
+
+            List<OrderDTO> orders = JsonSerializer.Deserialize<List<OrderDTO>>(
+                doc.RootElement.GetProperty("items").GetRawText()
+            ) ?? new List<OrderDTO>();
+
+            int totalCount = doc.RootElement.GetProperty("totalCount").GetInt32();
 
             return new PagedResult<OrderDTO>
             {
