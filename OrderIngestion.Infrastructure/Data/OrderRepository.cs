@@ -124,28 +124,16 @@ namespace OrderIngestion.Infrastructure.Data
             };
 
             // PostgreSQL function returns JSON array of orders including items
-            var jsonResult = await conn.QuerySingleAsync<string>(
-                @"SELECT SP_GetOrdersWithItems(
+            var orders = (await conn.QueryAsync<OrderDTO>(
+                @"SELECT * FROM ""SP_GetOrdersWithItems""(
                     @Page,
                     @PageSize,
                     @OrderNumber,
                     @CustomerEmail
-                )::text",
+                )",
                 parameters
-            );
+            )).ToList();
 
-            //var items = (await multi.ReadAsync<OrderItemDTO>()).ToList();
-            //var orders = (await multi.ReadAsync<OrderDTO>()).ToList();
-            //var totalCount = await multi.ReadSingleAsync<int>();
-
-            //var orderDict = orders.ToDictionary(o => o.OrderId);
-            //foreach (var item in items)
-            //{
-            //    if (orderDict.TryGetValue(item.OrderId, out var order))
-            //        order.Items.Add(item);
-            //}
-
-            var orders = JsonSerializer.Deserialize<List<OrderDTO>>(jsonResult) ?? new List<OrderDTO>();
             int totalCount = orders.Count;
 
             return new PagedResult<OrderDTO>
